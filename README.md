@@ -1,5 +1,18 @@
 # Personal Library Management API
 
+> ⚠️ **El código está en la rama `master`, no en `main`.**
+> Esta rama (`main`) solo contiene documentación. Para clonar y ejecutar:
+>
+> ```bash
+> git clone https://github.com/elvis-v7/porgramacion-mobil-Proyecto-5.git
+> cd porgramacion-mobil-Proyecto-5
+> git checkout master
+> dotnet run
+> ```
+>
+> Requisitos e instrucciones completas (endpoints, pruebas, requisitos de .NET 10)
+> en el **README de la rama [`master`](../../tree/master)**.
+
 ## Descripción del proyecto
 
 El proyecto consiste en desarrollar una API REST para administrar una colección personal de libros físicos.
