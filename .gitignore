@@ -1,0 +1,14 @@
+# ---- .NET / build ----
+bin/
+obj/
+*.user
+*.suo
+
+# ---- IDE ----
+.vs/
+.vscode/
+.idea/
+
+# ---- SO ----
+.DS_Store
+Thumbs.db
