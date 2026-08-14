@@ -17,6 +17,10 @@ if (app.Environment.IsDevelopment())
 // Auditoria: fuerza la redireccion a HTTPS para que las solicitudes viajen cifradas.
 app.UseHttpsRedirection();
 
+// Sirve el frontend estatico (wwwroot/index.html) en la raiz "/".
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();

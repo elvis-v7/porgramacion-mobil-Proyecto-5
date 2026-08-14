@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca Personal</title>
+  <style>
+    :root { --bg:#f4f5f7; --card:#fff; --line:#e2e5ea; --pri:#2563eb; --danger:#dc2626; --txt:#1f2937; --muted:#6b7280; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--txt); }
+    header { background:var(--pri); color:#fff; padding:18px 24px; }
+    header h1 { margin:0; font-size:1.3rem; }
+    main { max-width:820px; margin:0 auto; padding:24px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:24px; }
+    h2 { margin:0 0 16px; font-size:1.05rem; }
+    form { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    label { display:flex; flex-direction:column; font-size:.8rem; color:var(--muted); gap:4px; }
+    input { padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:.95rem; }
+    .actions { grid-column:1 / -1; display:flex; gap:10px; }
+    button { cursor:pointer; border:none; border-radius:6px; padding:9px 16px; font-size:.9rem; font-weight:600; }
+    .btn-pri { background:var(--pri); color:#fff; }
+    .btn-ghost { background:#eef0f3; color:var(--txt); }
+    .btn-del { background:transparent; color:var(--danger); padding:4px 8px; }
+    .btn-edit { background:transparent; color:var(--pri); padding:4px 8px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); font-size:.9rem; }
+    th { color:var(--muted); font-weight:600; }
+    #msg { padding:10px 14px; border-radius:6px; margin-bottom:16px; display:none; font-size:.9rem; }
+    #msg.ok { display:block; background:#dcfce7; color:#166534; }
+    #msg.err { display:block; background:#fee2e2; color:#991b1b; }
+    .empty { color:var(--muted); text-align:center; padding:20px; }
+  </style>
+</head>
+<body>
+  <header><h1>📚 Biblioteca Personal</h1></header>
+  <main>
+    <div id="msg"></div>
+
+    <div class="card">
+      <h2 id="formTitle">Agregar libro</h2>
+      <form id="bookForm">
+        <input type="hidden" id="bookId" />
+        <label>Título
+          <input id="title" required />
+        </label>
+        <label>Autor
+          <input id="author" required />
+        </label>
+        <label>ISBN
+          <input id="isbn" required />
+        </label>
+        <label>Año de publicación
+          <input id="publicationYear" type="number" required />
+        </label>
+        <div class="actions">
+          <button type="submit" class="btn-pri" id="submitBtn">Guardar</button>
+          <button type="button" class="btn-ghost" id="cancelBtn" style="display:none">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Libros registrados</h2>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Título</th><th>Autor</th><th>ISBN</th><th>Año</th><th></th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty" style="display:none">Todavía no hay libros.</div>
+    </div>
+  </main>
+
+  <script>
+    const API = "/books";
+    const $ = (id) => document.getElementById(id);
+    const form = $("bookForm");
+
+    function showMsg(text, ok) {
+      const el = $("msg");
+      el.textContent = text;
+      el.className = ok ? "ok" : "err";
+      setTimeout(() => { el.className = ""; }, 4000);
+    }
+
+    // Lee el JSON de error uniforme del API ({ status, error, message }).
+    async function errorText(res) {
+      try {
+        const body = await res.json();
+        return body.message || body.error || ("Error " + res.status);
+      } catch {
+        return "Error " + res.status;
+      }
+    }
+
+    async function loadBooks() {
+      const res = await fetch(API);
+      const books = await res.json();
+      const tbody = $("tbody");
+      tbody.innerHTML = "";
+      $("empty").style.display = books.length ? "none" : "block";
+      for (const b of books) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${b.id}</td>
+          <td>${escapeHtml(b.title)}</td>
+          <td>${escapeHtml(b.author)}</td>
+          <td>${escapeHtml(b.isbn)}</td>
+          <td>${b.publicationYear}</td>
+          <td>
+            <button class="btn-edit">Editar</button>
+            <button class="btn-del">Eliminar</button>
+          </td>`;
+        tr.querySelector(".btn-edit").onclick = () => startEdit(b);
+        tr.querySelector(".btn-del").onclick = () => removeBook(b.id);
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function resetForm() {
+      form.reset();
+      $("bookId").value = "";
+      $("formTitle").textContent = "Agregar libro";
+      $("cancelBtn").style.display = "none";
+    }
+
+    function startEdit(b) {
+      $("bookId").value = b.id;
+      $("title").value = b.title;
+      $("author").value = b.author;
+      $("isbn").value = b.isbn;
+      $("publicationYear").value = b.publicationYear;
+      $("formTitle").textContent = "Editar libro #" + b.id;
+      $("cancelBtn").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    $("cancelBtn").onclick = resetForm;
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const id = $("bookId").value;
+      const payload = {
+        title: $("title").value.trim(),
+        author: $("author").value.trim(),
+        isbn: $("isbn").value.trim(),
+        publicationYear: Number($("publicationYear").value),
+      };
+      const res = await fetch(id ? `${API}/${id}` : API, {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        showMsg(id ? "Libro actualizado." : "Libro creado.", true);
+        resetForm();
+        loadBooks();
+      } else {
+        showMsg(await errorText(res), false);
+      }
+    };
+
+    async function removeBook(id) {
+      if (!confirm("¿Eliminar el libro #" + id + "?")) return;
+      const res = await fetch(`${API}/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        showMsg("Libro eliminado.", true);
+        loadBooks();
+      } else {
+        showMsg(await errorText(res), false);
+      }
+    }
+
+    loadBooks();
+  </script>
+</body>
+</html>
